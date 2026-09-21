@@ -1,6 +1,5 @@
 import { daysForAverage, type HomeView } from "@/lib/dates";
-import { totalsFrom } from "@/lib/store";
-import { EXTRA_SLOT, type MealKind, type MealQuality, type Movement } from "@/lib/types";
+import { EXTRA_SLOT, type MealKind, type MealQuality } from "@/lib/types";
 
 const QUALITY_SCORE: Record<MealQuality, number> = {
   mala: 1,
@@ -22,13 +21,11 @@ export function qualityLabelFromScore(score: number) {
 export function summarizeRange(input: {
   dates: string[];
   today: string;
-  movements: Movement[];
   studyMs: number;
   exercises: { didExercise: boolean }[];
   meals: { slot: MealKind; quality: MealQuality | null }[];
 }) {
   const divisor = daysForAverage(input.dates, input.today);
-  const totals = totalsFrom(input.movements);
   const exerciseYes = input.exercises.filter((day) => day.didExercise).length;
   const mainsMarked = input.meals.filter((meal) => meal.slot !== EXTRA_SLOT && meal.quality).length;
   const extrasCount = input.meals.filter((meal) => meal.slot === EXTRA_SLOT).length;
@@ -44,8 +41,6 @@ export function summarizeRange(input: {
   const qualityAverage = qualityN > 0 ? qualitySum / qualityN : null;
   return {
     divisor,
-    totals,
-    averageResult: totals.resultado / divisor,
     studyMs: input.studyMs,
     studyAverageMs: input.studyMs / divisor,
     exerciseYes,

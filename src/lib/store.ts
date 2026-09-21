@@ -81,10 +81,6 @@ export async function listMovements(month: string): Promise<Movement[]> {
   return docs;
 }
 
-export async function listMovementsBetween(start: string, end: string) {
-  return findMovements({ $gte: start, $lte: end });
-}
-
 async function findMovements(date: { $gte: string; $lte: string }) {
   const db = await getDb();
   const docs = await db
@@ -197,6 +193,34 @@ export async function deleteSession(id: string) {
     .collection("study_sessions")
     .deleteOne({ _id: new ObjectId(id) });
   return result.deletedCount === 1;
+}
+
+export async function addSession(input: {
+  date: string;
+  topic: string;
+  durationMs: number;
+}) {
+  const db = await getDb();
+  await db.collection("study_sessions").insertOne({
+    date: input.date,
+    subject: "Nutrición",
+    topic: input.topic.trim(),
+    durationMs: input.durationMs,
+    createdAt: new Date(),
+  });
+}
+
+export async function updateSession(
+  id: string,
+  input: { topic: string; durationMs: number },
+) {
+  if (!ObjectId.isValid(id)) return false;
+  const db = await getDb();
+  const result = await db.collection<SessionDoc>("study_sessions").updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { topic: input.topic.trim(), durationMs: input.durationMs } },
+  );
+  return result.matchedCount === 1;
 }
 
 export async function saveTimer(topic: string) {

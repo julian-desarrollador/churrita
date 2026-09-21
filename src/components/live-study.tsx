@@ -36,9 +36,7 @@ export function LiveStudy({
           {timer.running ? "En curso" : "Sin guardar"} · {formatClock(live)}
           {timer.topic ? ` · ${timer.topic}` : ""}
         </p>
-      ) : (
-        <p className="mt-1 text-sm text-muted">Nutrición</p>
-      )}
+      ) : null}
     </>
   );
 }

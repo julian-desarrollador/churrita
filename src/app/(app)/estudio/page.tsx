@@ -1,3 +1,4 @@
+import { LoadTimerButton } from "@/components/session-form";
 import { StudyCalendar } from "@/components/study-calendar";
 import { StudyTimer } from "@/components/study-timer";
 import { currentMonth, isDate, isMonth, todayISO } from "@/lib/dates";
@@ -23,9 +24,12 @@ export default async function EstudioPage({
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-3xl font-semibold">Estudio</h1>
-        <p className="mt-1 text-muted">Nutrición</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold">Estudio</h1>
+          <p className="mt-1 text-muted">Nutrición</p>
+        </div>
+        <LoadTimerButton date={selected} />
       </div>
       <StudyTimer initial={timer} />
       <StudyCalendar month={month} selected={selected} sessions={sessions} />

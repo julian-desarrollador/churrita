@@ -10,16 +10,14 @@ import {
   weekdayIndex,
   type HomeView,
 } from "@/lib/dates";
-import { formatAverage, formatDuration, formatMoney } from "@/lib/format";
+import { formatAverage, formatDuration } from "@/lib/format";
 import { summarizeRange } from "@/lib/home";
 import {
   getMeals,
   getTimer,
   listExerciseBetween,
   listMealsBetween,
-  listMovementsBetween,
   listSessionsBetween,
-  totalsFrom,
 } from "@/lib/store";
 import { EXTRA_SLOT, MEAL_QUALITIES, QUALITY_LABELS, SLOT_LABELS } from "@/lib/types";
 
@@ -36,22 +34,19 @@ export default async function HomePage({
   const date = isDate(requested) ? requested : today;
   const view = parseHomeView(first(params.vista));
   const period = periodDates(view, date);
-  const [movements, sessions, exercises, meals, timer] = await Promise.all([
-    listMovementsBetween(period.start, period.end),
+  const [sessions, exercises, meals, timer] = await Promise.all([
     listSessionsBetween(period.start, period.end),
     listExerciseBetween(period.start, period.end),
     view === "dia" ? getMeals(date) : listMealsBetween(period.start, period.end),
     view === "dia" && date === today ? getTimer() : Promise.resolve(null),
   ]);
   const studyMs = sessions.reduce((sum, session) => sum + session.durationMs, 0);
-  const totals = totalsFrom(movements);
   const summary =
     view === "dia"
       ? null
       : summarizeRange({
           dates: period.dates,
           today,
-          movements,
           studyMs,
           exercises,
           meals,
@@ -62,30 +57,6 @@ export default async function HomePage({
     <div className="space-y-4">
       <HomePeriod view={view} date={date} today={today} />
 
-      <Link href={areaHref("contabilidad", date)} className={cardClass}>
-        <p className="text-sm text-muted">Contabilidad</p>
-        <p className="mt-2 text-2xl font-semibold tabular-nums">
-          {formatMoney(summary?.totals.resultado ?? totals.resultado)}
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          {view === "dia"
-            ? "Resultado del día"
-            : view === "semana"
-              ? "Resultado de la semana"
-              : "Resultado del mes"}
-        </p>
-        {summary ? (
-          <p className="mt-1 text-sm text-muted">
-            Promedio {formatMoney(summary.averageResult)} por día
-          </p>
-        ) : null}
-        <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
-          <MoneyStat label="Ganancias" value={summary?.totals.ganancia ?? totals.ganancia} />
-          <MoneyStat label="Gastos" value={summary?.totals.gasto ?? totals.gasto} />
-          <MoneyStat label="Inversiones" value={summary?.totals.inversion ?? totals.inversion} />
-        </dl>
-      </Link>
-
       {view === "dia" ? (
         <div className="grid grid-cols-2 gap-3">
           <Link href={areaHref("estudio", date, view)} className={cardClass}>
@@ -93,10 +64,7 @@ export default async function HomePage({
             {timer ? (
               <LiveStudy savedMs={studyMs} timer={timer} />
             ) : (
-              <>
-                <p className="mt-2 text-2xl font-semibold tabular-nums">{formatDuration(studyMs)}</p>
-                <p className="mt-1 text-sm text-muted">Nutrición</p>
-              </>
+              <p className="mt-2 text-2xl font-semibold tabular-nums">{formatDuration(studyMs)}</p>
             )}
           </Link>
           <Link href={areaHref("ejercicio", date, view)} className={cardClass}>
@@ -255,18 +223,8 @@ function DayMeals({
   );
 }
 
-function MoneyStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <dt className="text-muted">{label}</dt>
-      <dd className="mt-1 font-medium tabular-nums">{formatMoney(value)}</dd>
-    </div>
-  );
-}
-
-function areaHref(area: "contabilidad" | "estudio" | "ejercicio" | "nutricion", date: string, view: HomeView = "dia") {
+function areaHref(area: "estudio" | "ejercicio" | "nutricion", date: string, view: HomeView = "dia") {
   const month = date.slice(0, 7);
-  if (area === "contabilidad") return `/contabilidad?mes=${month}`;
   if (area === "estudio") {
     return view === "dia" ? `/estudio?mes=${month}&dia=${date}` : `/estudio?mes=${month}`;
   }

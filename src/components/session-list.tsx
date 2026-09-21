@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { EditTimerButton } from "@/components/session-form";
 import { send } from "@/lib/api-client";
 import { formatDuration } from "@/lib/format";
 import type { StudySession } from "@/lib/types";
@@ -32,9 +33,12 @@ export function SessionList({ sessions }: { sessions: StudySession[] }) {
             <p className="font-medium">{formatDuration(session.durationMs)}</p>
             <p className="text-sm text-muted">{session.topic || "Nutrición"}</p>
           </div>
-          <button type="button" className="text-sm text-muted" onClick={() => remove(session.id)}>
-            Quitar
-          </button>
+          <div className="flex shrink-0 items-center">
+            <EditTimerButton session={session} />
+            <button type="button" className="px-2 text-sm text-muted" onClick={() => remove(session.id)}>
+              Quitar
+            </button>
+          </div>
         </article>
       ))}
       {error ? <p className="text-sm text-muted">{error}</p> : null}

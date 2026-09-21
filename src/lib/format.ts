@@ -37,6 +37,33 @@ export function formatMoney(amount: number) {
   }).format(amount);
 }
 
+export function durationMsFromParts(hoursRaw: unknown, minutesRaw: unknown) {
+  const hours = wholeNumber(hoursRaw);
+  const minutes = wholeNumber(minutesRaw);
+  if (hours === null || minutes === null) return null;
+  if (hours < 0 || hours > 24 || minutes < 0 || minutes > 59) return null;
+  const ms = (hours * 60 + minutes) * 60_000;
+  if (ms < 60_000 || ms > 24 * 60 * 60_000) return null;
+  return ms;
+}
+
+export function durationParts(ms: number) {
+  const total = Math.max(0, Math.round(ms / 60_000));
+  return {
+    hours: String(Math.floor(total / 60)),
+    minutes: String(total % 60),
+  };
+}
+
+function wholeNumber(value: unknown) {
+  if (typeof value === "number" && Number.isInteger(value)) return value;
+  if (typeof value === "string" && /^\d+$/.test(value.trim())) {
+    const number = Number(value.trim());
+    return Number.isSafeInteger(number) ? number : null;
+  }
+  return null;
+}
+
 export function formatClock(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const hours = Math.floor(totalSeconds / 3600);
