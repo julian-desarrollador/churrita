@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { usePendingHref } from "@/components/instant-navigation";
 
 const LINKS = [
   { href: "/", label: "Inicio", icon: IconHome },
@@ -14,14 +15,16 @@ const LINKS = [
 
 export function Nav() {
   const pathname = usePathname();
+  const pendingHref = usePendingHref();
+  const currentPath = pendingHref ? new URL(pendingHref, "https://churrita.local").pathname : pathname;
 
   return (
     <nav className="mx-auto grid w-full max-w-3xl grid-cols-5">
       {LINKS.map((link) => {
         const active =
           link.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(link.href);
+            ? currentPath === "/"
+            : currentPath.startsWith(link.href);
         const Icon = link.icon;
         return (
           <Link

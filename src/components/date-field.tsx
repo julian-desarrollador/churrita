@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarMonth } from "@/components/calendar-month";
+import { useBeginNavigation } from "@/components/instant-navigation";
 import { formatLongDate, shiftMonth, todayISO } from "@/lib/dates";
 
 export function DateField({
@@ -21,13 +22,17 @@ export function DateField({
   heading?: string;
 }) {
   const router = useRouter();
+  const beginNavigation = useBeginNavigation();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const [shown, setShown] = useState(value);
+  const [trackedValue, setTrackedValue] = useState(value);
   const [month, setMonth] = useState(() => value.slice(0, 7));
-
-  useEffect(() => {
+  if (trackedValue !== value) {
+    setTrackedValue(value);
+    setShown(value);
     setMonth(value.slice(0, 7));
-  }, [value]);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -46,11 +51,14 @@ export function DateField({
   }, [open]);
 
   function choose(date: string) {
+    setShown(date);
     onChange?.(date);
     if (navigateTo) {
       const params = new URLSearchParams(extraQuery ?? "");
       params.set("fecha", date);
-      router.push(`${navigateTo}?${params}`);
+      const href = `${navigateTo}?${params}`;
+      beginNavigation(href);
+      router.push(href);
     }
     setOpen(false);
   }
@@ -61,13 +69,13 @@ export function DateField({
       <div className="mt-3 rounded-3xl border border-line bg-white p-4">
         <CalendarMonth
           month={month}
-          selected={value}
+          selected={shown}
           onPrevious={() => setMonth((current) => shiftMonth(current, -1))}
           onNext={() => setMonth((current) => shiftMonth(current, 1))}
           onDay={choose}
         />
       </div>
-      {!heading && value !== today ? (
+      {!heading && shown !== today ? (
         <button type="button" onClick={() => choose(today)} className="mt-2 w-full text-sm text-muted">
           Ir a hoy
         </button>
@@ -86,7 +94,7 @@ export function DateField({
             onClick={() => setOpen((current) => !current)}
             className="min-w-0 text-right text-sm leading-snug text-muted"
           >
-            {formatLongDate(value)}
+            {formatLongDate(shown)}
           </button>
         </div>
         {calendar}
@@ -103,7 +111,7 @@ export function DateField({
         onClick={() => setOpen((current) => !current)}
         className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-line bg-white px-4 py-3 text-left"
       >
-        <span>{formatLongDate(value)}</span>
+        <span>{formatLongDate(shown)}</span>
         <span className="text-sm text-muted">{open ? "Cerrar" : "Elegir"}</span>
       </button>
       {calendar}

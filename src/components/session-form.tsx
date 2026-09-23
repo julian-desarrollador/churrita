@@ -168,7 +168,7 @@ function TimerDialog({
             Cancelar
           </button>
           <PrimaryButton type="submit" disabled={pending}>
-            Guardar
+            {pending ? "Guardando..." : "Guardar"}
           </PrimaryButton>
         </div>
       </form>

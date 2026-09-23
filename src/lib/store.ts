@@ -7,13 +7,15 @@ import type {
   MealKind,
   MealQuality,
   MealSlot,
-  MonthTotals,
   Movement,
   MovementKind,
   StudySession,
   TimerState,
 } from "@/lib/types";
 import { EXTRA_SLOT, MEAL_SLOTS } from "@/lib/types";
+import { totalsFrom } from "@/lib/totals";
+
+export { totalsFrom };
 
 type MovementDoc = {
   _id: ObjectId;
@@ -47,6 +49,15 @@ const EMPTY_TIMER: TimerDoc = {
   accumulatedMs: 0,
   topic: "",
 };
+
+function trustedInstant(value: string | undefined) {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  if (!Number.isFinite(time)) return null;
+  const skew = Date.now() - time;
+  if (skew < -5_000 || skew > 30_000) return null;
+  return new Date(time).toISOString();
+}
 
 function elapsedMs(timer: TimerDoc, now = Date.now()) {
   let total = timer.accumulatedMs;
@@ -91,15 +102,6 @@ async function findMovements(date: { $gte: string; $lte: string }) {
   return docs.map(toMovement);
 }
 
-export function totalsFrom(movements: Movement[]): MonthTotals {
-  const totals = { ganancia: 0, gasto: 0, inversion: 0, resultado: 0 };
-  for (const movement of movements) {
-    totals[movement.kind] += movement.amount;
-  }
-  totals.resultado = totals.ganancia - totals.gasto - totals.inversion;
-  return totals;
-}
-
 export async function addMovement(input: {
   date: string;
   kind: MovementKind;
@@ -141,21 +143,22 @@ export async function getTimer() {
   return toTimer(await readTimer());
 }
 
-export async function playTimer(topic: string) {
+export async function playTimer(topic: string, at?: string) {
   const timer = await readTimer();
   if (!timer.running) {
     timer.running = true;
-    timer.startedAt = new Date().toISOString();
+    timer.startedAt = trustedInstant(at) ?? new Date().toISOString();
   }
   timer.topic = topic;
   await writeTimer(timer);
   return toTimer(timer);
 }
 
-export async function pauseTimer(topic: string) {
+export async function pauseTimer(topic: string, at?: string) {
   const timer = await readTimer();
   if (timer.running && timer.startedAt) {
-    timer.accumulatedMs = elapsedMs(timer);
+    const end = trustedInstant(at);
+    timer.accumulatedMs = elapsedMs(timer, end ? new Date(end).getTime() : Date.now());
     timer.running = false;
     timer.startedAt = null;
   }
@@ -223,10 +226,11 @@ export async function updateSession(
   return result.matchedCount === 1;
 }
 
-export async function saveTimer(topic: string) {
+export async function saveTimer(topic: string, at?: string) {
   const timer = await readTimer();
   timer.topic = topic;
-  const durationMs = elapsedMs(timer);
+  const end = trustedInstant(at);
+  const durationMs = elapsedMs(timer, end ? new Date(end).getTime() : Date.now());
   if (durationMs < 1000) {
     await writeTimer(timer);
     return { timer: toTimer(timer), saved: false as const };

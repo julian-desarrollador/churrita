@@ -25,7 +25,7 @@ export function Pwa() {
     const ios =
       /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    if (ios) setIosHint(true);
+    if (ios) queueMicrotask(() => setIosHint(true));
 
     function onPrompt(event: Event) {
       event.preventDefault();

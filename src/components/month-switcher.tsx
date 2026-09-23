@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { formatMonth, shiftMonth } from "@/lib/dates";
+import { usePendingHref } from "@/components/instant-navigation";
+import { formatMonth, isMonth, shiftMonth } from "@/lib/dates";
 
 export function MonthSwitcher({
   month,
@@ -8,8 +11,10 @@ export function MonthSwitcher({
   month: string;
   basePath: string;
 }) {
-  const previous = shiftMonth(month, -1);
-  const next = shiftMonth(month, 1);
+  const pendingHref = usePendingHref();
+  const shown = pendingMonth(pendingHref, basePath) ?? month;
+  const previous = shiftMonth(shown, -1);
+  const next = shiftMonth(shown, 1);
 
   return (
     <div className="flex items-center gap-2">
@@ -20,7 +25,7 @@ export function MonthSwitcher({
       >
         ‹
       </Link>
-      <p className="min-w-0 flex-1 text-center font-medium">{formatMonth(month)}</p>
+      <p className="min-w-0 flex-1 text-center font-medium">{formatMonth(shown)}</p>
       <Link
         href={`${basePath}?mes=${next}`}
         aria-label={`Ver ${formatMonth(next)}`}
@@ -30,4 +35,12 @@ export function MonthSwitcher({
       </Link>
     </div>
   );
+}
+
+function pendingMonth(href: string | null, basePath: string) {
+  if (!href) return null;
+  const url = new URL(href, "https://churrita.local");
+  if (url.pathname !== basePath) return null;
+  const month = url.searchParams.get("mes") ?? "";
+  return isMonth(month) ? month : null;
 }

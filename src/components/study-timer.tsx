@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { send } from "@/lib/api-client";
 import { formatClock } from "@/lib/format";
 import type { TimerState } from "@/lib/types";
@@ -13,8 +13,17 @@ export function StudyTimer({ initial }: { initial: TimerState }) {
   const [topic, setTopic] = useState(initial.topic);
   const [now, setNow] = useState(() => Date.now());
   const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
+  const revision = useRef(0);
+  const chain = useRef(Promise.resolve());
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!timer.running) return;
@@ -24,26 +33,42 @@ export function StudyTimer({ initial }: { initial: TimerState }) {
 
   const shown = displayedMs(timer, now);
 
-  async function act(action: "play" | "pause" | "save" | "discard") {
-    setPending(true);
-    setError("");
-    setSaved(false);
-    try {
-      const next = await send<TimerState>("/api/study/timer", {
-        method: "POST",
-        body: JSON.stringify({ action, topic }),
-      });
-      setTimer(next);
-      setNow(Date.now());
-      if (action === "save") {
-        setSaved(true);
-        router.refresh();
-      }
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "No se pudo guardar");
-    } finally {
-      setPending(false);
+  function act(action: "play" | "pause" | "save" | "discard") {
+    const now = Date.now();
+    const current = timer;
+    if (action === "save" && displayedMs(current, now) < 1000) {
+      setSaved(false);
+      setError("Todavía no hay tiempo para guardar");
+      return;
     }
+    const rev = ++revision.current;
+    const at = new Date(now).toISOString();
+    setError("");
+    setSaved(action === "save");
+    setNow(now);
+    setTimer(optimisticTimer(current, action, topic, now));
+    chain.current = chain.current.catch(() => undefined).then(async () => {
+      try {
+        const next = await send<TimerState>("/api/study/timer", {
+          method: "POST",
+          body: JSON.stringify({ action, topic, at }),
+        });
+        if (!mounted.current || revision.current !== rev) return;
+        setTimer(next);
+        setNow(Date.now());
+        if (action === "save") router.refresh();
+      } catch (caught) {
+        if (!mounted.current || revision.current !== rev) return;
+        setSaved(false);
+        setError(caught instanceof Error ? caught.message : "No se pudo guardar");
+        try {
+          const fresh = await send<TimerState>("/api/study/timer");
+          if (mounted.current && revision.current === rev) setTimer(fresh);
+        } catch {
+          // El reloj local sigue hasta que vuelva la conexión.
+        }
+      }
+    });
   }
 
   return (
@@ -61,7 +86,6 @@ export function StudyTimer({ initial }: { initial: TimerState }) {
         <PrimaryButton
           type="button"
           className={timer.running ? "bg-white hover:bg-white" : ""}
-          disabled={pending}
           onClick={() => act(timer.running ? "pause" : "play")}
         >
           {timer.running ? "Pausa" : "Play"}
@@ -69,7 +93,6 @@ export function StudyTimer({ initial }: { initial: TimerState }) {
         <PrimaryButton
           type="button"
           className="bg-white hover:bg-leaf"
-          disabled={pending}
           onClick={() => act("save")}
         >
           Guardar
@@ -79,7 +102,6 @@ export function StudyTimer({ initial }: { initial: TimerState }) {
         <button
           type="button"
           className="mt-3 text-sm text-muted"
-          disabled={pending}
           onClick={() => act("discard")}
         >
           Descartar este tiempo
@@ -89,6 +111,41 @@ export function StudyTimer({ initial }: { initial: TimerState }) {
       {error ? <p className="mt-3 text-sm">{error}</p> : null}
     </div>
   );
+}
+
+function optimisticTimer(
+  timer: TimerState,
+  action: "play" | "pause" | "save" | "discard",
+  topic: string,
+  now: number,
+): TimerState {
+  const elapsed = displayedMs(timer, now);
+  if (action === "play") {
+    if (timer.running) return { ...timer, topic };
+    return {
+      running: true,
+      startedAt: new Date(now).toISOString(),
+      accumulatedMs: timer.accumulatedMs,
+      elapsedMs: elapsed,
+      topic,
+    };
+  }
+  if (action === "pause") {
+    return {
+      running: false,
+      startedAt: null,
+      accumulatedMs: elapsed,
+      elapsedMs: elapsed,
+      topic,
+    };
+  }
+  return {
+    running: false,
+    startedAt: null,
+    accumulatedMs: 0,
+    elapsedMs: 0,
+    topic,
+  };
 }
 
 function displayedMs(timer: TimerState, now: number) {

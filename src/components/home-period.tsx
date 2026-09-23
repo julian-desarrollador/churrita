@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { DateField } from "@/components/date-field";
+import { usePendingHref } from "@/components/instant-navigation";
 import {
   addDays,
   formatMonth,
+  isDate,
+  parseHomeView,
   periodDates,
   shiftMonth,
   type HomeView,
@@ -25,14 +30,18 @@ export function HomePeriod({
   date: string;
   today: string;
 }) {
-  const period = periodDates(view, date);
+  const pendingHref = usePendingHref();
+  const pending = pendingHome(pendingHref, today);
+  const shownView = pending?.view ?? view;
+  const shownDate = pending?.date ?? date;
+  const period = periodDates(shownView, shownDate);
   const includesToday = period.start <= today && today <= period.end;
   const title =
-    view === "dia"
-      ? date === today
+    shownView === "dia"
+      ? shownDate === today
         ? "Hoy"
         : "Día"
-      : view === "semana"
+      : shownView === "semana"
         ? includesToday
           ? "Esta semana"
           : "Semana"
@@ -41,30 +50,30 @@ export function HomePeriod({
           : "Mes";
 
   const periodLabel =
-    view === "semana" ? formatWeekRange(period.start, period.end) : formatMonth(date.slice(0, 7));
+    shownView === "semana" ? formatWeekRange(period.start, period.end) : formatMonth(shownDate.slice(0, 7));
 
   return (
     <div className="space-y-3">
-      {view === "dia" ? (
+      {shownView === "dia" ? (
         <DateField
           heading={title}
-          value={date}
+          value={shownDate}
           navigateTo="/"
           extraQuery="vista=dia"
         />
       ) : (
         <div className="flex items-center justify-between gap-3">
           <h1 className="shrink-0 text-3xl font-semibold">{title}</h1>
-          <RangeNav view={view} date={date} today={today} label={periodLabel} />
+          <RangeNav view={shownView} date={shownDate} today={today} label={periodLabel} />
         </div>
       )}
       <nav aria-label="Período" className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1">
         {VIEWS.map((item) => {
-          const active = item.id === view;
+          const active = item.id === shownView;
           return (
             <Link
               key={item.id}
-              href={homeHref(item.id, date, today)}
+              href={homeHref(item.id, shownDate, today)}
               aria-current={active ? "page" : undefined}
               className={`flex min-h-11 items-center justify-center rounded-xl text-sm ${
                 active ? "bg-leaf font-semibold" : "font-medium text-muted"
@@ -75,11 +84,21 @@ export function HomePeriod({
           );
         })}
       </nav>
-      {view !== "dia" && period.start > today ? (
+      {shownView !== "dia" && period.start > today ? (
         <p className="text-center text-sm text-muted">Este período todavía no empieza</p>
       ) : null}
     </div>
   );
+}
+
+function pendingHome(href: string | null, today: string) {
+  if (!href) return null;
+  const url = new URL(href, "https://churrita.local");
+  if (url.pathname !== "/") return null;
+  if (!url.search) return { view: "dia" as const, date: today };
+  const fecha = url.searchParams.get("fecha") ?? "";
+  if (!isDate(fecha)) return null;
+  return { view: parseHomeView(url.searchParams.get("vista") ?? ""), date: fecha };
 }
 
 function RangeNav({
