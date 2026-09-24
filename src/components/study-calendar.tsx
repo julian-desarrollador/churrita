@@ -43,7 +43,7 @@ export function StudyCalendar({
       <div className="mt-2 border-t border-line pt-4">
         <p className="text-lg font-semibold">{weekday}</p>
         <p className="text-sm text-muted">{rest}</p>
-        <SessionList sessions={selectedSessions} />
+        <SessionList key={selected} sessions={selectedSessions} />
       </div>
     </section>
   );

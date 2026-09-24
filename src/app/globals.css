@@ -15,10 +15,44 @@
   --font-sans: var(--font-geist-sans);
 }
 
+html {
+  touch-action: manipulation;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+a:active,
+button:active {
+  opacity: 0.72;
+}
+
+.nav-progress > span {
+  display: block;
+  height: 100%;
+  width: 35%;
+  background: var(--color-leaf-strong);
+  animation: churrita-nav 0.9s ease-in-out infinite;
+}
+
+@keyframes churrita-nav {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress > span {
+    width: 100%;
+    animation: none;
+    opacity: 0.85;
+  }
 }
 
 a:focus-visible,

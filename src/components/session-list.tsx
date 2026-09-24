@@ -10,24 +10,34 @@ import type { StudySession } from "@/lib/types";
 export function SessionList({ sessions }: { sessions: StudySession[] }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [syncedSessions, setSyncedSessions] = useState(sessions);
+  if (syncedSessions !== sessions) {
+    setSyncedSessions(sessions);
+    setHidden([]);
+  }
 
   async function remove(id: string) {
+    setHidden((current) => (current.includes(id) ? current : [...current, id]));
     setError("");
     try {
       await send(`/api/study/sessions/${id}`, { method: "DELETE" });
       router.refresh();
     } catch (caught) {
+      setHidden((current) => current.filter((item) => item !== id));
       setError(caught instanceof Error ? caught.message : "No se pudo quitar");
     }
   }
 
-  if (sessions.length === 0) {
+  const visible = sessions.filter((session) => !hidden.includes(session.id));
+
+  if (visible.length === 0) {
     return <p className="mt-2 text-sm text-muted">Este día no tiene estudio guardado.</p>;
   }
 
   return (
     <div className="mt-3 space-y-2">
-      {sessions.map((session) => (
+      {visible.map((session) => (
         <article key={session.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3">
           <div>
             <p className="font-medium">{formatDuration(session.durationMs)}</p>

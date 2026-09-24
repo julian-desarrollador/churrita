@@ -16,13 +16,14 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const action = body?.action;
   const topic = typeof body?.topic === "string" ? body.topic.trim() : "";
+  const at = typeof body?.at === "string" ? body.at : undefined;
 
-  if (action === "play") return Response.json(await playTimer(topic));
-  if (action === "pause") return Response.json(await pauseTimer(topic));
+  if (action === "play") return Response.json(await playTimer(topic, at));
+  if (action === "pause") return Response.json(await pauseTimer(topic, at));
   if (action === "topic") return Response.json(await rememberTopic(topic));
   if (action === "discard") return Response.json(await discardTimer(topic));
   if (action === "save") {
-    const result = await saveTimer(topic);
+    const result = await saveTimer(topic, at);
     if (!result.saved) {
       return jsonError("Todavía no hay tiempo para guardar");
     }
