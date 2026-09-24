@@ -41,6 +41,9 @@ export default async function HomePage({
     view === "dia" && date === today ? getTimer() : Promise.resolve(null),
   ]);
   const studyMs = sessions.reduce((sum, session) => sum + session.durationMs, 0);
+  const todayStudyMs = sessions
+    .filter((session) => session.date === today)
+    .reduce((sum, session) => sum + session.durationMs, 0);
   const summary =
     view === "dia"
       ? null
@@ -48,6 +51,7 @@ export default async function HomePage({
           dates: period.dates,
           today,
           studyMs,
+          todayStudyMs,
           exercises,
           meals,
         });
@@ -95,6 +99,14 @@ export default async function HomePage({
                   {formatDuration(summary.studyAverageMs)}
                 </p>
                 <p className="mt-1 text-sm text-muted">Promedio por día</p>
+                {summary.studyAverageWithoutTodayMs != null ? (
+                  <>
+                    <p className="mt-2 text-base font-semibold tabular-nums">
+                      {formatDuration(summary.studyAverageWithoutTodayMs)}
+                    </p>
+                    <p className="text-sm text-muted">Sin contar hoy</p>
+                  </>
+                ) : null}
               </div>
             </div>
           </Link>
