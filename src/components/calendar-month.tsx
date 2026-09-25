@@ -62,7 +62,7 @@ export function CalendarMonth({
         {cells.map((cell) => {
           const isToday = cell.date === today;
           const isSelected = cell.date === selected;
-          const className = `flex h-14 flex-col items-center justify-start pt-1 ${
+          const className = `flex ${caption ? "h-16" : "h-14"} flex-col items-center justify-start pt-1 ${
             cell.inMonth ? "text-foreground" : "text-muted/40"
           }`;
           const body = (
@@ -74,9 +74,11 @@ export function CalendarMonth({
               >
                 {cell.day}
               </span>
-              <span className="mt-0.5 h-3 text-[10px] leading-none text-muted">
-                {caption?.(cell.date, cell.inMonth) ?? ""}
-              </span>
+              {caption ? (
+                <span className="mt-0.5 text-[13px] font-medium leading-tight text-muted">
+                  {caption(cell.date, cell.inMonth)}
+                </span>
+              ) : null}
             </>
           );
           const label = labelFor?.(cell.date) ?? formatLongDate(cell.date);
