@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DateField } from "@/components/date-field";
 import { EjercicioForm } from "@/components/ejercicio-form";
 import { isDate, todayISO } from "@/lib/dates";
@@ -15,7 +16,15 @@ export default async function EjercicioPage({
 
   return (
     <div className="space-y-5">
-      <h1 className="text-3xl font-semibold">Ejercicio</h1>
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="text-3xl font-semibold">Ejercicio</h1>
+        <Link
+          href="/gimnasio"
+          className="mt-1 shrink-0 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium"
+        >
+          Gimnasio
+        </Link>
+      </div>
       <DateField label="Día" value={date} navigateTo="/ejercicio" />
       <EjercicioForm key={date} exercise={exercise} />
     </div>

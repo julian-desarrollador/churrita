@@ -24,7 +24,9 @@ export function Nav() {
         const active =
           link.href === "/"
             ? currentPath === "/"
-            : currentPath.startsWith(link.href);
+            : link.href === "/ejercicio"
+              ? currentPath.startsWith("/ejercicio") || currentPath.startsWith("/gimnasio")
+              : currentPath.startsWith(link.href);
         const Icon = link.icon;
         return (
           <Link
