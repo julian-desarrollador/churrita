@@ -8,12 +8,12 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Churrita",
+  title: "Floriah",
   description: "Contabilidad, estudio, ejercicio y nutrición",
-  applicationName: "Churrita",
+  applicationName: "Floriah",
   appleWebApp: {
     capable: true,
-    title: "Churrita",
+    title: "Floriah",
     statusBarStyle: "default",
   },
   icons: {

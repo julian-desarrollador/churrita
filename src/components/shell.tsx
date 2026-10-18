@@ -12,7 +12,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="mx-auto flex h-14 w-full max-w-3xl items-center px-4">
             <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
               <img src="/apple-touch-icon.png" alt="" width={36} height={36} className="h-9 w-9" />
-              Churrita
+              Floriah
             </Link>
           </div>
         </header>

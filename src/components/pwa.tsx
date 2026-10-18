@@ -56,7 +56,7 @@ export function Pwa() {
       <div className="mx-auto flex max-w-3xl items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3">
         <p className="flex-1 text-sm">
           {installEvent
-            ? "Instalá Churrita en este dispositivo."
+            ? "Instalá Floriah en este dispositivo."
             : "Para tenerla en el inicio, tocá Compartir y después Agregar a inicio."}
         </p>
         {installEvent ? (
